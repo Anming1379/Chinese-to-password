@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
+  <title>中文转强密码生成器</title>
+  <meta name="description" content="中文转强密码生成器 - 将中文内容转换为确定性12位强密码" />
+  <style>
+/* 变量部分保持不变 */
+:root {
+  --color-base: #FFFFFF;
+  --color-contrast: #32354d;
+  --color-accent: #5152c5;
+  --color-text: #333333;
+  --color-text-light: #666666;
+  --color-background-light: #f8f9fa;
+  --color-border: #e9ecef;
+  --font-main: serif;
+  --font-size-xs: .75rem;
+  --font-size-sm: .875rem;
+  --font-size-md: 1rem;
+  --font-size-lg: clamp(1.25rem, 1.25rem + ((1vw - 0.2rem) * 0.2), 1.5rem);
+  --font-size-xl: clamp(1.75rem, 1.75rem + ((1vw - 0.2rem) * 0.3), 2rem);
+  --font-size-xxl: clamp(2rem, 2rem + ((1vw - 0.2rem) * 0.5), 2.5rem);
+  --spacing-xs: .75rem;
+  --spacing-sm: 1.25rem;
+  --spacing-md: 2rem;
+  --spacing-lg: 3rem;
+  --spacing-xl: 4rem;
+  --container-md: min(90%, 1200px);
+  --container-lg: min(95%, 1400px);
+  --radius-sm: 1px;
+  --radius-md: 2px;
+  --radius-lg: 4px;
+  --transition-fast: .2s ease;
+  --transition-normal: .3s ease;
+  /* 新增按钮相关变量 */
+  --btn-padding-sm: .75rem 1.5rem;
+  --btn-padding-lg: 0.5rem 3rem;
+  --btn-font-size-sm: var(--font-size-sm);
+  --btn-font-size-lg: var(--font-size-md);
+}
+
+/* reset部分保持不变 */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: var(--font-main);
+  font-size: var(--font-size-md);
+  line-height: 1.6;
+  color: var(--color-text);
+  background: var(--color-base);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+}
+
+/* 容器部分保持不变 */
+.container {
+  width: var(--container-md);
+  max-width: 100%;
+  margin: 0 auto;
+  padding: 0 var(--spacing-md);
+}
+
+/* 标题与文字部分保持不变 */
+h1, h2, h3, h4, h5, h6 {
+  font-weight: 400;
+  line-height: 1.2;
+  color: var(--color-contrast);
+  margin-bottom: var(--spacing-sm);
+}
+
+h1 { font-size: var(--font-size-xxl); }
+h2 { font-size: var(--font-size-xl); }
+h3 { font-size: var(--font-size-lg); }
+p { margin-bottom: var(--spacing-sm); }
+.tagline { font-size: var(--font-size-xs); color: var(--color-text-light); font-weight: 300; }
+.description { font-size: var(--font-size-md); max-width: 400px; margin-bottom: var(--spacing-md); font-weight: 300; }
+
+/* 链接部分保持不变 */
+a {
+  color: var(--color-contrast);
+  text-decoration: none;
+  transition: color var(--transition-fast);
+}
+
+a:hover { color: var(--color-accent); text-decoration: underline; }
+a:focus { outline: 2px solid var(--color-accent); outline-offset: 2px; }
+
+/* 按钮优化部分 - 这里是重点 */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--btn-padding-sm);
+  font-size: var(--btn-font-size-sm);
+  font-weight: 400; /* 稍微加粗，增加可读性 */
+  border-radius: var(--radius-md); /* 使用稍大的圆角，更现代 */
+  border: none;
+  cursor: pointer;
+  text-align: center;
+  text-decoration: none;
+  transition: all var(--transition-normal); /* 使用normal过渡时间，更平滑 */
+  white-space: nowrap; /* 防止按钮文字换行 */
+}
+
+.btn-primary {
+  background: var(--color-contrast);
+  color: var(--color-base);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* 添加轻微阴影增加层次感 */
+}
+
+.btn-primary:hover {
+  background: var(--color-accent);
+  color: var(--color-base);
+  transform: translateY(-1px); /* 添加悬停微动效果 */
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15); /* 悬停时增加阴影 */
+}
+
+.btn-primary:active {
+  transform: translateY(0); /* 点击时恢复位置 */
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1); /* 点击时减少阴影 */
+}
+
+.btn-secondary {
+  background: transparent;
+  color: var(--color-contrast);
+  border: 2px solid var(--color-contrast);
+}
+
+.btn-secondary:hover {
+  background: var(--color-accent);
+  color: var(--color-base);
+  border-color: var(--color-accent);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.btn-secondary:active {
+  transform: translateY(0);
+}
+
+/* 导航部分 */
+.header {
+  padding: var(--spacing-md) 0;
+  border-bottom: 1px solid var(--color-border);
+  position: relative;
+}
+
+.nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.back-home {
+  margin-top: 1.2rem;
+  display: flex;
+  align-items: center;
+}
+
+.back-button {
+  color: var(--color-contrast);
+  text-decoration: none;
+  font-size: var(--font-size-md);
+  transition: color var(--transition-fast);
+}
+
+.back-button:hover {
+  color: var(--color-accent);
+  text-decoration: underline;
+}
+
+/* 主内容部分 */
+.main { padding: var(--spacing-xl) 0; min-height: 60vh; }
+
+.profile {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+  margin-bottom: var(--spacing-xl);
+}
+
+.profile-content {
+  display: flex;
+  flex-direction: column;
+}
+
+/* 内容区部分 */
+.content { display: flex; flex-direction: column; gap: var(--spacing-lg); }
+.content-section { padding: var(--spacing-md); background: var(--color-base); border-radius: var(--radius-md); border: 1px solid var(--color-border); }
+
+.hidden { display: none !important; }
+
+/* 密码生成器特定样式 */
+.input-area {
+  margin-bottom: var(--spacing-md);
+}
+
+.textarea {
+  width: 100%;
+  min-height: 100px;
+  padding: var(--spacing-sm);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-family: var(--font-main);
+  font-size: var(--font-size-md);
+  resize: vertical;
+  line-height: 1.5;
+  margin-top: var(--spacing-xs);
+  transition: border-color var(--transition-normal);
+}
+
+.textarea:focus {
+  outline: none;
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 2px rgba(81, 82, 197, 0.1);
+}
+
+.password-display-area {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  margin-top: var(--spacing-lg);
+  flex-wrap: wrap;
+}
+
+.password-box {
+  flex: 1;
+  min-width: 200px;
+  padding: var(--spacing-sm);
+  background: var(--color-background-light);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-family: 'Courier New', 'Consolas', 'Monaco', 'Menlo', monospace;
+  font-size: var(--font-size-lg);
+  word-break: break-all;
+  color: var(--color-contrast);
+  line-height: 1.4;
+  min-height: 60px;
+  display: flex;
+  align-items: center; /* 垂直居中 */
+  justify-content: center; /* 水平居中 */
+  text-align: center; /* 文本居中（作为备用） */
+  transition: all var(--transition-normal);
+}
+
+/* 为了确保占位符文本也居中，可以添加以下样式 */
+.password-box .password-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  text-align: center;
+}
+
+.password-placeholder {
+  color: var(--color-text-light);
+  font-weight: normal;
+  font-style: italic;
+}
+
+.copy-btn-container {
+  display: flex;
+  gap: var(--spacing-xs);
+}
+
+.success {
+  background: #5152c5 !important;
+  color: white !important;
+  border-color: #5152c5 !important;
+}
+
+/* 响应式设计 */
+@media (min-width: 768px) {
+  .btn {
+    padding: var(--btn-padding-lg); /* 使用更大的内边距 */
+    font-size: var(--btn-font-size-lg); /* 使用稍大的字体 */
+    min-height: 3rem; /* 确保按钮有足够的最小高度 */
+  }
+  
+  .content {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: var(--spacing-xl);
+  }
+  
+  .content-section {
+    flex: 1;
+    min-width: 300px;
+  }
+  
+  .password-display-area {
+    flex-wrap: nowrap;
+  }
+}
+
+@media (max-width: 767px) {
+  .container { padding: 0 var(--spacing-sm); }
+  
+  .content-section { padding: var(--spacing-sm); }
+  
+  .password-display-area {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .copy-btn-container {
+    width: 100%;
+  }
+  
+  .copy-btn-container .btn {
+    flex: 1;
+  }
+}
+
+/* 暗色模式支持 */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-base: #121212;
+    --color-contrast: #e0e0e0;
+    --color-text: #e0e0e0;
+    --color-text-light: #aaaaaa;
+    --color-background-light: #1e1e1e;
+    --color-border: #333333;
+  }
+  
+  .textarea {
+    background: #2d2d2d;
+    color: var(--color-text);
+  }
+  
+  .password-box {
+    background: #2d2d2d;
+    color: #4fc3f7;
+    border-color: #444;
+  }
+  
+  .password-placeholder {
+    color: #888;
+  }
+}
+  </style>
+</head>
+<body>
+  <main class="main">
+    <div class="container">
+      <div class="profile" id="home">
+        <div class="profile-content">
+          <h1>中文转强密码</h1>
+          <p class="description">建议不要输入过于简单的话</p>
+
+          <div class="input-area">
+            <label for="chineseInput"></label>
+            <textarea 
+              id="chineseInput" 
+              class="textarea" 
+              placeholder="同一个中文总是同一个密码..."
+              rows="4"
+            ></textarea>
+          </div>
+
+          <div class="password-display-area" id="passwordArea">
+            <div class="password-box" id="passwordDisplay">
+              <span class="password-placeholder">Please enter...</span>
+            </div>
+            <div class="copy-btn-container">
+              <button id="copyBtn" class="btn btn-secondary">复制密码</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+<script>
+  // 字符集：数字、小写字母、大写字母、特殊符号
+  const chars = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ!@#$%^&*()_+-=[]{}|;:,.<>?";
+  
+  // DOM 元素
+  const copyBtn = document.getElementById('copyBtn');
+  const chineseInput = document.getElementById('chineseInput');
+  const passwordDisplay = document.getElementById('passwordDisplay');
+  
+  // 防抖函数，避免频繁调用
+  let debounceTimer;
+  function debounce(func, delay) {
+    return function() {
+      const context = this;
+      const args = arguments;
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(() => func.apply(context, args), delay);
+    };
+  }
+  
+  // 更新密码显示
+  function updatePasswordDisplay(password) {
+    if (password && password !== "Please enter...") {
+      passwordDisplay.innerHTML = password;
+      passwordDisplay.classList.remove('password-placeholder');
+    } else {
+      passwordDisplay.innerHTML = '<span class="password-placeholder">Please enter...</span>';
+      passwordDisplay.classList.add('password-placeholder');
+    }
+  }
+  
+  // 生成密码的映射规则
+  async function generatePassword(input) {
+    if (!input || input.trim() === '') {
+      updatePasswordDisplay('');
+      return;
+    }
+    
+    // 使用SHA-256生成哈希
+    const encoder = new TextEncoder();
+    const data = encoder.encode(input);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    
+    // 将哈希值转换为12位密码 - 修复：使用所有哈希字节确保足够的熵
+    let password = "";
+    
+    // 方法1：使用哈希的所有字节生成更均匀的分布
+    for (let i = 0; i < 12; i++) {
+      // 使用不同的哈希字节组合，确保每个位置都有足够的随机性
+      let index = 0;
+      for (let j = 0; j < 3; j++) {
+        const hashPos = (i * 3 + j) % hashArray.length;
+        index = (index * 256 + hashArray[hashPos]) % chars.length;
+      }
+      password += chars[Math.abs(index) % chars.length];
+    }
+    
+    // 确保密码至少包含一个数字、一个大写字母、一个小写字母和一个符号
+    password = ensureCharacterVariety(password, hashArray);
+    
+    // 显示密码
+    updatePasswordDisplay(password);
+  }
+  
+  // 确保密码包含各种字符类型，基于哈希值进行确定性替换
+  function ensureCharacterVariety(pwd, hashArray) {
+    // 检查密码是否已经包含所有必需字符类型
+    const hasNumber = /\d/.test(pwd);
+    const hasLower = /[a-z]/.test(pwd);
+    const hasUpper = /[A-Z]/.test(pwd);
+    const hasSymbol = /[^a-zA-Z0-9]/.test(pwd);
+    
+    if (hasNumber && hasLower && hasUpper && hasSymbol) {
+      return pwd;
+    }
+    
+    // 如果缺少某种类型，基于哈希值进行确定性替换
+    const pwdArr = pwd.split('');
+    const positions = [1, 3, 5, 7, 9, 11]; // 更多替换位置选择
+    
+    // 使用哈希数组中后面的字节作为确定性种子
+    let hashIndex = 20; // 从哈希数组的中间开始使用
+    
+    // 创建一个确定性的替换计划
+    const replacePlan = [];
+    if (!hasNumber) replacePlan.push('number');
+    if (!hasLower) replacePlan.push('lower');
+    if (!hasUpper) replacePlan.push('upper');
+    if (!hasSymbol) replacePlan.push('symbol');
+    
+    // 执行替换
+    for (let i = 0; i < replacePlan.length; i++) {
+      const type = replacePlan[i];
+      const pos = positions[i % positions.length];
+      
+      // 根据类型选择字符范围
+      let char;
+      switch (type) {
+        case 'number':
+          char = chars.charAt((hashArray[hashIndex++] || 0) % 10); // 0-9
+          break;
+        case 'lower':
+          char = chars.charAt(10 + ((hashArray[hashIndex++] || 0) % 26)); // a-z
+          break;
+        case 'upper':
+          char = chars.charAt(36 + ((hashArray[hashIndex++] || 0) % 26)); // A-Z
+          break;
+        case 'symbol':
+          const symbolCount = chars.length - 62;
+          char = chars.charAt(62 + ((hashArray[hashIndex++] || 0) % symbolCount)); // 符号
+          break;
+      }
+      
+      pwdArr[pos] = char;
+    }
+    
+    return pwdArr.join('');
+  }
+  
+  // 复制密码
+  copyBtn.addEventListener('click', async () => {
+    const password = passwordDisplay.textContent;
+    if (!password || password === "Please enter..." || passwordDisplay.classList.contains('password-placeholder')) {
+      return;
+    }
+    
+    try {
+      await navigator.clipboard.writeText(password);
+      
+      // 临时改变按钮文本显示复制成功
+      copyBtn.textContent = "✓ 已复制";
+      copyBtn.classList.add('success');
+      
+      setTimeout(() => {
+        copyBtn.textContent = "复制密码";
+        copyBtn.classList.remove('success');
+      }, 2000);
+    } catch (err) {
+      // 备用方法
+      const textArea = document.createElement('textarea');
+      textArea.value = password;
+      document.body.appendChild(textArea);
+      textArea.select();
+      try {
+        document.execCommand('copy');
+        copyBtn.textContent = "✓ 已复制";
+        copyBtn.classList.add('success');
+        
+        setTimeout(() => {
+          copyBtn.textContent = "复制密码";
+          copyBtn.classList.remove('success');
+        }, 2000);
+      } catch (err) {
+        alert("复制失败: " + err);
+      }
+      document.body.removeChild(textArea);
+    }
+  });
+  
+  // 实时监听输入变化
+  chineseInput.addEventListener('input', debounce(async () => {
+    const input = chineseInput.value.trim();
+    await generatePassword(input);
+  }, 300)); // 300ms防抖延迟
+  
+  // 页面加载后自动聚焦到输入框
+  window.addEventListener('DOMContentLoaded', () => {
+    chineseInput.focus();
+  });
+  
+  // 添加键盘快捷键
+  document.addEventListener('keydown', function(e) {
+    // Alt+C 复制密码
+    if (e.altKey && e.key === 'c') {
+      e.preventDefault();
+      copyBtn.click();
+    }
+    // Ctrl+A 全选输入框内容
+    if (e.ctrlKey && e.key === 'a' && document.activeElement === chineseInput) {
+      e.preventDefault();
+      chineseInput.select();
+    }
+  });
+</script>
+</body>
+</html>
